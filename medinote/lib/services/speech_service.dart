@@ -5,19 +5,27 @@ class SpeechService {
     'com.example.medinote/speech',
   );
 
-  static Future startRecording() async {
-    await _channel.invokeMethod('startRecording');
+  static Future<void> startRecording() async {
+    try {
+      await _channel.invokeMethod('startRecording');
+    } on PlatformException catch (e) {
+      print("Failed to start recording service: '${e.message}'.");
+    }
   }
 
-  static Future stopRecording() async {
-    await _channel.invokeMethod('stopRecording');
+  static Future<void> stopRecording() async {
+    try {
+      await _channel.invokeMethod('stopRecording');
+    } on PlatformException catch (e) {
+      print("Failed to stop recording service: '${e.message}'.");
+    }
   }
 
-  static Future startPlaying() async {
+  static Future<void> startPlaying() async {
     await _channel.invokeMethod('startPlaying');
   }
 
-  static Future stopPlaying() async {
+  static Future<void> stopPlaying() async {
     await _channel.invokeMethod('stopPlaying');
   }
 }

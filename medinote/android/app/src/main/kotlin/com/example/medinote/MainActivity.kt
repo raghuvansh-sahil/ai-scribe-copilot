@@ -1,5 +1,6 @@
 package com.example.medinote
 
+import android.content.Intent
 import androidx.annotation.NonNull
 import com.example.medinote.record.AndroidAudioRecorder
 import com.example.medinote.playback.AndroidAudioPlayer
@@ -21,21 +22,23 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler  { call, result ->
                 when (call.method) {
                     "startRecording" -> {
-                        recorder.start()
-                        result.success(true)
+                        val intent = Intent(this, AndroidAudioRecorder::class.java)
+                        startService(intent)
+                        result.success(null)
                     }
                     "stopRecording" -> {
-                        recorder.stop()
-                        result.success(true)
+                        val intent = Intent(this, AndroidAudioRecorder::class.java)
+                        stopService(intent)
+                        result.success(null)
                     }
                     "startPlaying" -> {
-                        val data = recorder.getRecordedBytes()
+                        val data = AndroidAudioRecorder.getRecordedBytes()
                         player.play(data)
-                        result.success(true)
+                        result.success(null)
                     }
                     "stopPlaying" -> {
                         player.stop()
-                        result.success(true)
+                        result.success(null)
                     }
                     else -> result.notImplemented()
                 }
