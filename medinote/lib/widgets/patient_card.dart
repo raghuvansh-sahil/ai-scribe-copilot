@@ -19,7 +19,7 @@ class PatientCard extends StatelessWidget {
               patient.name,
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            Text(patient.id, style: const TextStyle(fontSize: 15)),
+            Text(patient.id ?? '', style: const TextStyle(fontSize: 15)),
           ],
         ),
       ),

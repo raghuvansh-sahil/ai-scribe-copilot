@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:medinote/skeleton.dart';
+import 'package:medinote/models/patient.dart';
+import 'package:medinote/screens/patients_screen.dart';
+import 'package:medinote/screens/recording_screen.dart';
+import 'package:medinote/services/api_service.dart';
 
 void main() {
-  runApp(const MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+
+  const userId = "user_123";
+  const baseUrl = 'https://app.scribehealth.ai/api';
+  const authToken = 'your_auth_token_here';
+
+  ApiServiceHandler.init(baseUrl: baseUrl, authToken: authToken);
+  runApp(MyApp(userId: userId));
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  final String userId;
+  const MyApp({super.key, required this.userId});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -22,7 +33,10 @@ class _MyAppState extends State<MyApp> {
           seedColor: Colors.amber,
         ),
       ),
-      home: Skeleton(),
+      home: RecordingScreen(
+        patient: Patient(id: "user_123", name: "John Doe"),
+        userId: widget.userId,
+      ),
     );
   }
 }

@@ -36,7 +36,7 @@ class ApiService {
     }
   }
 
-  Future<Patient> createPatient(Patient patient) async {
+  Future<Patient> addPatient(Patient patient) async {
     final uri = Uri.parse('$baseUrl/v1/add-patient-ext');
 
     final response = await http.post(
@@ -165,5 +165,13 @@ class ApiService {
         'Failed to notify chunk upload: ${response.statusCode} ${response.reasonPhrase}',
       );
     }
+  }
+}
+
+class ApiServiceHandler {
+  static late final ApiService instance;
+
+  static void init({required String baseUrl, required String authToken}) {
+    instance = ApiService(baseUrl: baseUrl, authToken: authToken);
   }
 }

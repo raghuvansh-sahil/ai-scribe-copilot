@@ -7,12 +7,12 @@ List<Patient> patientsFromJson(String str) {
 }
 
 class Patient {
-  String id;
+  String? id;
   String name;
   String? userId;
   String? pronouns;
 
-  Patient({required this.id, required this.name, this.userId, this.pronouns});
+  Patient({this.id, required this.name, this.userId, this.pronouns});
 
   factory Patient.fromJson(Map<String, dynamic> json) => Patient(
     id: json["id"],
