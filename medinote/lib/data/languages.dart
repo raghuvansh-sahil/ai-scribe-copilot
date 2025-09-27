@@ -1,6 +1,6 @@
 const languages = [
-  Language('Francais', 'fr_FR'),
   Language('English', 'en_US'),
+  Language('Francais', 'fr_FR'),
   Language('Pусский', 'ru_RU'),
   Language('Italiano', 'it_IT'),
 ];

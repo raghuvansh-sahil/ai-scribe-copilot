@@ -7,13 +7,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:medinote/screens/home_screen.dart';
+import 'package:medinote/main.dart';
 
 void main() {
+  const userId = "user_123";
   testWidgets('Counter increments smoke test', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(HomeScreen());
+    await tester.pumpWidget(const MyApp(userId: userId));
 
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

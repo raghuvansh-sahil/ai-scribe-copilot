@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:medinote/models/patient.dart';
 import 'package:medinote/screens/patients_screen.dart';
-import 'package:medinote/screens/recording_screen.dart';
 import 'package:medinote/services/api_service.dart';
+import 'package:medinote/widgets/recording_widget.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,9 +32,12 @@ class _MyAppState extends State<MyApp> {
           seedColor: Colors.amber,
         ),
       ),
-      home: RecordingScreen(
-        patient: Patient(id: "user_123", name: "John Doe"),
-        userId: widget.userId,
+      home: Scaffold(
+        appBar: AppBar(title: Text("Record - ")),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: const RecordingWidget(),
+        ),
       ),
     );
   }
