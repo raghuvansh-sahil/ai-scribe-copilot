@@ -11,7 +11,6 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
 
     private val channelName = "com.example.medinote/speech"
-    private val recorder = AndroidAudioRecorder()
     private val player = AndroidAudioPlayer()
 
     @androidx.annotation.RequiresPermission(android.Manifest.permission.RECORD_AUDIO)
@@ -22,26 +21,47 @@ class MainActivity : FlutterActivity() {
             .setMethodCallHandler  { call, result ->
                 when (call.method) {
                     "startRecording" -> {
-                        val intent = Intent(this, AndroidAudioRecorder::class.java)
-                        startService(intent)
-                        result.success(null)
+                        try {
+                            val intent = Intent(this, AndroidAudioRecorder::class.java)
+                            startService(intent)
+                            result.success(null)
+                        } catch (e: Exception) {
+                            result.error("RECORDING_ERROR", "Failed to start recording", e.message)
+                        }
                     }
                     "stopRecording" -> {
-                        val intent = Intent(this, AndroidAudioRecorder::class.java)
-                        stopService(intent)
-                        result.success(null)
+                        try {
+                            val intent = Intent(this, AndroidAudioRecorder::class.java)
+                            stopService(intent)
+                            result.success(null)
+                        } catch (e: Exception) {
+                            result.error("RECORDING_ERROR", "Failed to stop recording", e.message)
+                        }
                     }
                     "startPlaying" -> {
-                        val data = AndroidAudioRecorder.getRecordedBytes()
-                        player.play(data)
-                        result.success(null)
+                        try {
+                            val data = AndroidAudioRecorder.getRecordedBytes()
+                            player.play(data)
+                            result.success(null)
+                        } catch (e: Exception) {
+                            result.error("PLAYBACK_ERROR", "Failed to play audio", e.message)
+                        }
                     }
                     "stopPlaying" -> {
-                        player.stop()
-                        result.success(null)
+                        try {
+                            player.stop()
+                            result.success(null)
+                        } catch (e: Exception) {
+                            result.error("PLAYBACK_ERROR", "Failed to stop playback", e.message)
+                        }
                     }
                     else -> result.notImplemented()
                 }
             }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        player.stop()
     }
 }

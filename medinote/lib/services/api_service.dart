@@ -95,8 +95,12 @@ class ApiService {
     );
 
     if (response.statusCode == 201) {
-      final jsonData = json.decode(response.body);
-      return RecordingSessionResponse.fromJson(jsonData["session"]);
+      try {
+        final jsonData = json.decode(response.body);
+        return RecordingSessionResponse.fromJson(jsonData);
+      } catch (e) {
+        rethrow;
+      }
     } else {
       throw Exception(
         'Failed to create recording session: ${response.statusCode} ${response.reasonPhrase}',

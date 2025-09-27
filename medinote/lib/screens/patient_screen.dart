@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:medinote/models/patient.dart';
-import 'package:medinote/models/session.dart';
 import 'package:medinote/screens/recording_screen.dart';
-import 'package:medinote/services/api_service.dart';
 import 'package:medinote/widgets/session_card.dart';
+import 'package:provider/provider.dart';
+import 'package:medinote/providers/session_provider.dart';
 
 class PatientScreen extends StatefulWidget {
   final Patient patient;
@@ -16,7 +16,13 @@ class PatientScreen extends StatefulWidget {
 }
 
 class _PatientScreenState extends State<PatientScreen> {
-  final Set<int> expandedSessions = {};
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SessionProvider>().loadSessions(widget.patient.id ?? '');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,9 +33,12 @@ class _PatientScreenState extends State<PatientScreen> {
           children: [
             Text(
               widget.patient.name,
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
-            Text(widget.patient.id ?? '', style: const TextStyle(fontSize: 15)),
+            Text(
+              widget.patient.id ?? '',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
           ],
         ),
       ),
@@ -45,49 +54,97 @@ class _PatientScreenState extends State<PatientScreen> {
             ),
           );
         },
-        child: const Icon(Icons.add),
+        child: const Icon(Icons.add, size: 28),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: FutureBuilder<List<Session>>(
-          future: ApiServiceHandler.instance.getPatientSessions(
-            patientId: widget.patient.id ?? '',
-          ),
-          builder: (context, AsyncSnapshot<List<Session>> snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: const CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text(snapshot.error.toString()));
-            } else if (snapshot.hasData && snapshot.data != null) {
-              final sessions = snapshot.data!;
-              if (sessions.isEmpty) {
-                return const Center(child: Text('No sessions saved.'));
-              }
-              return ListView.builder(
-                itemCount: sessions.length,
-                itemBuilder: (context, index) {
-                  final isExpanded = expandedSessions.contains(index);
-
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        if (isExpanded) {
-                          expandedSessions.remove(index);
-                        } else {
-                          expandedSessions.add(index);
-                        }
-                      });
-                    },
-                    child: SessionCard(
-                      session: sessions[index],
-                      showFull: isExpanded,
+        padding: const EdgeInsets.all(16.0),
+        child: Consumer<SessionProvider>(
+          builder: (context, sessionProvider, child) {
+            if (sessionProvider.isLoading) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Loading sessions...',
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
-                  );
-                },
+                  ],
+                ),
               );
-            } else {
-              return const Center(child: Text('Nothing to show.'));
             }
+
+            if (sessionProvider.error != null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error loading sessions',
+                      style: Theme.of(context).textTheme.bodyLarge,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        sessionProvider.loadSessions(widget.patient.id ?? '');
+                      },
+                      child: Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final sessions = sessionProvider.getSessions(
+              widget.patient.id ?? '',
+            );
+            if (sessions.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.record_voice_over,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No sessions yet',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tap the + button to start recording',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return ListView.builder(
+              itemCount: sessions.length,
+              itemBuilder: (context, index) {
+                final session = sessions[index];
+                final isExpanded = sessionProvider.isExpanded(session.id);
+
+                return GestureDetector(
+                  onTap: () {
+                    sessionProvider.toggleSessionExpansion(session.id);
+                  },
+                  child: SessionCard(session: session, showFull: isExpanded),
+                );
+              },
+            );
           },
         ),
       ),

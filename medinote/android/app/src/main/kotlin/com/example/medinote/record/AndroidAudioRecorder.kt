@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.media.AudioFormat
@@ -15,34 +16,56 @@ import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import com.example.medinote.R
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.thread
 
 class AndroidAudioRecorder : Service() {
     companion object {
         const val CHANNEL_ID = "AndroidAudioRecorderServiceChannel"
 
-        val recordedData = mutableListOf<ByteArray>()
+        val recordedData = CopyOnWriteArrayList<ByteArray>()
 
+        @Synchronized
         fun getRecordedBytes(): ByteArray {
-            val totalSize = recordedData.sumOf { it.size }
+            val snapshot = ArrayList(recordedData)
+            val totalSize = snapshot.sumOf { it.size }
             val output = ByteArray(totalSize)
             var offset = 0
-            for (chunk in recordedData) {
+            for (chunk in snapshot) {
                 System.arraycopy(chunk, 0, output, offset, chunk.size)
                 offset += chunk.size
             }
             return output
+        }
+
+        @Synchronized
+        fun clearRecordedData() {
+            recordedData.clear()
         }
     }
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+
+        val notificationIntent = Intent(this, Class.forName("com.example.medinote.MainActivity"))
+        notificationIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            notificationIntent,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0
+        )
+
         val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Microphone is Active")
             .setContentText("This app is accessing your microphone.")
             .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentIntent(pendingIntent)
+            .setOngoing(true)
             .build()
+
         startForeground(2345678, notification)
     }
 
@@ -66,8 +89,6 @@ class AndroidAudioRecorder : Service() {
     private val channelConfig = AudioFormat.CHANNEL_IN_MONO
     private val audioFormat = AudioFormat.ENCODING_PCM_16BIT
     private val bufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat)
-
-
 
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -102,13 +123,14 @@ class AndroidAudioRecorder : Service() {
 
         audioRecord?.startRecording()
         isRecording = true
-        recordedData.clear()
+        clearRecordedData() // Use the synchronized clear method
 
         recordingThread = thread(start = true) {
             val buffer = ByteArray(bufferSize)
             while (isRecording) {
                 val read = audioRecord?.read(buffer, 0, buffer.size) ?: 0
                 if (read > 0) {
+                    // This is thread-safe with CopyOnWriteArrayList
                     recordedData.add(buffer.copyOf(read))
                 }
             }
@@ -120,6 +142,12 @@ class AndroidAudioRecorder : Service() {
         audioRecord?.stop()
         audioRecord?.release()
         audioRecord = null
+        recordingThread?.join()
         recordingThread = null
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        stop()
     }
 }
